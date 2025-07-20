@@ -1,74 +1,45 @@
-import { inject, Injectable, resource, signal, Signal, Injector, computed } from '@angular/core';
-import { runInInjectionContext } from '@angular/core';
-import {
-  Firestore, addDoc, collection, getDocs,
-  deleteDoc, doc, updateDoc
-} from '@angular/fire/firestore';
-import { Book, NewBook } from './my-books.models';
-import { AuthService } from './../../shared/services/auth.service';
+import { inject, Injectable, signal, computed } from '@angular/core';
+import { Book } from '../../shared/models/book.model';
+import { FirestoreService } from '../../shared/services/firestore.service';
 
-@Injectable() // Provided at the MyBooks component level
+type BookStatus = 'all' | 'to-read' | 'reading' | 'finished';
+
+/**
+ * Manages the UI state for the MyBooks feature. It gets book data from the
+ * global FirestoreService and provides filtered lists and state management
+ * for the components.
+ */
+@Injectable() // Provided by the MyBooks component
 export class MyBooksService {
-  private firestore: Firestore = inject(Firestore);
-  private injector: Injector = inject(Injector);
-  private authService: AuthService = inject(AuthService);
-
-  private booksCollection = computed(() => {
-    const user = this.authService.currentUser();
-    if (user) {
-      return collection(this.firestore, `users/${user.uid}/books`);
-    }
-    return null;
-  });
-
-  // --- Data Resource using resource() API ---
-  private booksResource = resource({
-    params: () => ({ collectionRef: this.booksCollection() }),
-    loader: async ({ params }) => {
-      const { collectionRef } = params;
-      if (!collectionRef) return [];
-      
-      return runInInjectionContext(this.injector, async () => {
-        const querySnapshot = await getDocs(collectionRef);
-        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Book[];
-      });
-    },
-  });
-
-  // --- Public State Signals ---
-  public books: Signal<Book[] | undefined> = this.booksResource.value;
-  public isLoading: Signal<boolean> = this.booksResource.isLoading;
-  public error: Signal<unknown | undefined> = this.booksResource.error;
+  private firestoreService = inject(FirestoreService);
 
   // --- UI State Signals ---
   public view = signal<'list' | 'edit' | 'detail'>('list');
   public selectedBook = signal<Book | undefined>(undefined);
   public layout = signal<'table' | 'grid'>('table');
+  public activeFilter = signal<BookStatus>('all'); // NEW: For the filter tabs
 
-  // --- CRUD Methods ---
-  // addBook is still needed by the Discover feature.
-  public async addBook(bookData: NewBook): Promise<any> {
-    const collectionRef = this.booksCollection();
-    if (!collectionRef) throw new Error('User not logged in');
-    const newBookWithTimestamp = { ...bookData, createdAt: new Date() };
-    const result = await addDoc(collectionRef, newBookWithTimestamp);
-    this.booksResource.reload(); // Reload data after adding
-    return result;
+  // --- Data Signals ---
+  public books = this.firestoreService.books;
+  public isLoading = this.firestoreService.isLoading;
+  
+  // NEW: A computed signal that filters the book list based on the active tab.
+  public filteredBooks = computed(() => {
+    const books = this.books() || [];
+    const filter = this.activeFilter();
+    if (filter === 'all') {
+      return books;
+    }
+    return books.filter(book => book.status === filter);
+  });
+
+  // --- CRUD Methods (proxied to FirestoreService) ---
+  // Note: addBook has been removed from this service.
+  public updateBook(bookId: string, dataToUpdate: Partial<Book>): Promise<void> {
+    return this.firestoreService.updateBook(bookId, dataToUpdate);
   }
 
-  public async updateBook(bookId: string, dataToUpdate: Partial<Book>): Promise<void> {
-    const collectionRef = this.booksCollection();
-    if (!collectionRef) throw new Error('User not logged in');
-    const bookDoc = doc(collectionRef, bookId);
-    await updateDoc(bookDoc, dataToUpdate);
-    this.booksResource.reload(); // Reload data after updating
-  }
-
-  public async deleteBook(bookId: string): Promise<void> {
-    const collectionRef = this.booksCollection();
-    if (!collectionRef) throw new Error('User not logged in');
-    const bookDoc = doc(collectionRef, bookId);
-    await deleteDoc(bookDoc);
-    this.booksResource.reload(); // Reload data after deleting
+  public deleteBook(bookId: string): Promise<void> {
+    return this.firestoreService.deleteBook(bookId);
   }
 }

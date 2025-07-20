@@ -1,28 +1,37 @@
 import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { MyBooksService } from '../my-books.service';
-import { Book } from '../my-books.models';
+import { Book } from '../../../shared/models/book.model';
 import { ModalService } from '../../../shared/modals/modals.service';
 
 @Component({
   selector: 'app-book-table',
+  imports: [CommonModule],
   template: `
-    <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+    <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
       <table class="min-w-full divide-y divide-slate-200">
         <thead class="bg-slate-50">
           <tr>
-            <th scope="col" class="py-3.5 pl-6 text-left text-sm font-semibold text-slate-900">Title</th>
+            <th scope="col" class="py-3.5 pl-6 pr-3 text-left text-sm font-semibold text-slate-900">Title</th>
             <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">Author</th>
             <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">Status</th>
-            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">Rating</th>
+            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">Your Rating</th>
             <th scope="col" class="relative py-3.5 pl-3 pr-6"><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-200 bg-white">
-          @for (book of booksService.books(); track book.id) {
+          @for (book of booksService.filteredBooks(); track book.id) {
             <tr>
-              <td (click)="showDetailView(book)" class="py-4 pl-6 font-medium text-slate-900 hover:text-indigo-600 cursor-pointer">{{ book.title }}</td>
+              <td (click)="showDetailView(book)" class="py-4 pl-6 pr-3 font-medium text-slate-900 hover:text-indigo-600 cursor-pointer">{{ book.title }}</td>
               <td class="px-3 py-4 text-sm text-slate-500">{{ book.author }}</td>
-              <td class="px-3 py-4 text-sm text-slate-500 capitalize">{{ book.status }}</td>
+              <td class="px-3 py-4 text-sm text-slate-500">
+                <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium" 
+                  [class.bg-indigo-100]="book.status === 'reading'" [class.text-indigo-700]="book.status === 'reading'"
+                  [class.bg-amber-100]="book.status === 'to-read'" [class.text-amber-700]="book.status === 'to-read'"
+                  [class.bg-green-100]="book.status === 'finished'" [class.text-green-700]="book.status === 'finished'">
+                  {{ book.status | titlecase }}
+                </span>
+              </td>
               <td class="px-3 py-4 text-sm text-slate-500">
                 @if (book.rating) {
                   <div class="flex items-center">
@@ -39,6 +48,12 @@ import { ModalService } from '../../../shared/modals/modals.service';
                   <button (click)="showEditForm(book)" class="text-indigo-600 hover:text-indigo-900">Edit</button>
                   <button (click)="promptDelete(book)" class="text-red-600 hover:text-red-900">Delete</button>
                 </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="text-center py-12 text-slate-500">
+                <p>No books found for this filter.</p>
               </td>
             </tr>
           }

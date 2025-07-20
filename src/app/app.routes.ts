@@ -25,9 +25,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/my-books/my-books').then((m) => m.MyBooks),
       },
       {
-        path: 'discover', // NEW: Added discover route
+        path: 'discover',
+        // This single route handles both the master and detail views.
         loadComponent: () => import('./pages/discover/discover').then((m) => m.Discover),
       },
+      // The discover/:id route is correctly removed.
       {
         path: 'settings',
         loadComponent: () => import('./pages/settings/settings').then((m) => m.Settings),

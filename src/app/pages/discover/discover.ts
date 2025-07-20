@@ -1,62 +1,97 @@
 import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { DiscoverService } from './discover.service';
 import { ModalService } from '../../shared/modals/modals.service';
 import { BookSearchResult } from './discover.model';
+import { BookCard } from './components/book-card';
+import { BookCarousel } from './components/book-carousel';
 
 @Component({
   selector: 'app-discover',
-  providers: [DiscoverService],
+  imports: [CommonModule, BookCard, BookCarousel],
   template: `
-    <div class="space-y-6">
-      <!-- Header and Search Bar -->
-      <div>
-        <h1 class="text-3xl font-bold text-slate-800">Discover New Books</h1>
-        <p class="mt-1 text-slate-500">Search for books by title or author to add to your collection.</p>
-        <div class="mt-4 relative">
-          <input 
-            #searchInput
-            (input)="discoverService.searchTerm.set(searchInput.value)"
-            type="text" 
-            placeholder="Search for 'Dune', 'Brandon Sanderson', etc..."
-            class="w-full rounded-md border-0 p-3 pr-10 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
-          />
-          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-            <svg class="h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+    <div class="relative overflow-x-hidden">
+      <!-- Master View Container -->
+      <div 
+        class="transition-transform duration-500 ease-in-out"
+        [class.translate-x-0]="!discoverService.selectedBookId()"
+        [class.-translate-x-full]="discoverService.selectedBookId()">
+        <div class="space-y-12">
+          <!-- Header and Search Bar -->
+          <div>
+            <h1 class="text-3xl font-bold text-slate-800">Discover New Books</h1>
+            <p class="mt-1 text-slate-500">Search for books by title or author, or browse our featured genres.</p>
+            <div class="mt-6 relative">
+              <input #searchInput (input)="discoverService.searchTerm.set(searchInput.value)" type="text" placeholder="Search for 'Dune'..." class="w-full rounded-md border-0 p-3 pr-10 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600" />
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                <svg class="h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+              </div>
+            </div>
           </div>
+          <!-- Search or Genre Content -->
+          @if (discoverService.searchTerm()) {
+            <h2 class="text-2xl font-bold text-slate-800">Search Results</h2>
+            @if (discoverService.isSearching()) {
+              <p class="text-center text-slate-500 py-8">Searching for books...</p>
+            } @else {
+              @if (discoverService.searchResults(); as results) {
+                @if (results.length > 0) {
+                  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                    @for (book of results; track book.id) { <app-book-card [book]="book" /> }
+                  </div>
+                } @else {
+                  <div class="text-center py-12"><p class="text-slate-500">No results found for "{{ discoverService.searchTerm() }}".</p></div>
+                }
+              }
+            }
+          } @else {
+            <div class="space-y-10">
+              <app-book-carousel title="Popular in Fantasy" [books]="discoverService.fantasyBooks()" />
+              <app-book-carousel title="Top Science Fiction" [books]="discoverService.scienceFictionBooks()" />
+              <app-book-carousel title="Thrilling Mysteries" [books]="discoverService.mysteryBooks()" />
+            </div>
+          }
         </div>
       </div>
 
-      <!-- Results Grid -->
-      @if (discoverService.isLoading()) {
-        <div class="flex justify-center items-center py-12">
-          <p class="text-slate-500">Searching for books...</p>
-        </div>
-      } @else {
-        @if (discoverService.searchResults(); as results) {
-          @if (results.length > 0) {
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              @for (book of results; track book.id) {
-                <div class="group relative overflow-hidden rounded-lg bg-white shadow-sm transition-shadow duration-300 hover:shadow-lg">
-                  <img [src]="book.coverImageUrl || 'https://placehold.co/400x600/e2e8f0/64748b?text=Cover'" alt="Cover for {{ book.title }}" class="aspect-[2/3] w-full object-cover">
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-                  <div class="absolute bottom-0 left-0 w-full p-4">
-                    <h3 class="font-semibold text-white truncate">{{ book.title }}</h3>
-                    <p class="text-sm text-slate-300 truncate">{{ book.author }}</p>
+      <!-- Detail View Container -->
+      <div 
+        class="absolute top-0 left-0 w-full transition-transform duration-500 ease-in-out"
+        [class.translate-x-full]="!discoverService.selectedBookId()"
+        [class.translate-x-0]="discoverService.selectedBookId()">
+        @if (discoverService.isSelectedBookLoading()) {
+          <p class="text-center text-slate-500 py-12">Loading book details...</p>
+        } @else {
+          @if (discoverService.selectedBook(); as book) {
+            <div class="mx-auto max-w-5xl">
+              <button (click)="discoverService.selectedBookId.set(null)" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 mb-6">
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clip-rule="evenodd" /></svg>
+                Back to Discover
+              </button>
+              <div class="flex flex-col gap-8 rounded-lg bg-white p-8 shadow-md md:flex-row">
+                <div class="w-full md:w-1/3 flex-shrink-0"><img class="w-full rounded-lg object-cover shadow-lg" [src]="book.coverImageUrl || 'https://placehold.co/400x600/e2e8f0/64748b?text=Cover'" alt="Cover for {{ book.title }}"></div>
+                <div class="flex flex-col">
+                  <div>
+                    @if (book.categories.length > 0) { <p class="font-semibold text-indigo-600">{{ book.categories[0] }}</p> }
+                    <h1 class="mt-1 text-4xl font-bold tracking-tight text-slate-900">{{ book.title }}</h1>
+                    <p class="mt-2 text-xl text-slate-600">by {{ book.author }}</p>
+                    <div class="mt-4 flex items-center gap-4 text-sm text-slate-500">
+                      <span>{{ book.publishedDate }}</span><span>&bull;</span><span>{{ book.publisher }}</span><span>&bull;</span><span>{{ book.pageCount }} pages</span>
+                    </div>
                   </div>
-                  <button (click)="addBook(book)" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white opacity-0 shadow-lg transition-all group-hover:opacity-100 hover:scale-105">
-                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
-                    Add to Shelf
-                  </button>
+                  <div class="mt-6 border-t border-slate-200 pt-6">
+                    <h2 class="text-lg font-semibold text-slate-800">Description</h2>
+                    <div class="mt-2 prose prose-slate max-w-none" [innerHTML]="book.description"></div>
+                  </div>
+                  <div class="mt-auto pt-8">
+                    <button (click)="addBook(book)" class="w-full rounded-md bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">Add to My Bookshelf</button>
+                  </div>
                 </div>
-              }
-            </div>
-          } @else if (discoverService.searchTerm()) {
-            <div class="text-center py-12">
-              <p class="text-slate-500">No results found for "{{ discoverService.searchTerm() }}".</p>
+              </div>
             </div>
           }
         }
-      }
+      </div>
     </div>
   `,
 })
