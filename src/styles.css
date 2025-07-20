@@ -1,1 +1,31 @@
 @import "tailwindcss";
+
+/* Add the animation keyframes and classes here */
+@keyframes moveOrb1 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(40px, 60px); }
+  50% { transform: translate(-20px, -30px); }
+  75% { transform: translate(30px, -50px); }
+}
+@keyframes moveOrb2 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-50px, -70px); }
+  50% { transform: translate(30px, 40px); }
+  75% { transform: translate(-40px, 60px); }
+}
+@keyframes moveOrb3 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(60px, -40px); }
+  50% { transform: translate(-30px, 50px); }
+  75% { transform: translate(-50px, -30px); }
+}
+@keyframes moveOrb4 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-70px, 50px); }
+  50% { transform: translate(40px, -60px); }
+  75% { transform: translate(60px, 40px); }
+}
+.animate-orb1 { animation: moveOrb1 20s infinite alternate; }
+.animate-orb2 { animation: moveOrb2 25s infinite alternate; }
+.animate-orb3 { animation: moveOrb3 18s infinite alternate; }
+.animate-orb4 { animation: moveOrb4 22s infinite alternate; }

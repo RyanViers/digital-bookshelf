@@ -1,6 +1,6 @@
 import { Component, computed, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { NAVIGATION_ITEMS, NavigationItem, WebPage } from '../../shared/navigation.data';
+import { NAVIGATION_ITEMS, NavigationItem, WebPage } from '../../shared/models/navigation.models';
 import { Icon} from './icon';
 
 @Component({

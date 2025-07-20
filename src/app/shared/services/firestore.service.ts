@@ -1,14 +1,19 @@
-import { inject, Injectable, resource, signal, Signal, Injector, computed } from '@angular/core';
+import { inject, Injectable, resource, Signal, Injector, computed } from '@angular/core';
 import { runInInjectionContext } from '@angular/core';
 import {
   Firestore, addDoc, collection, getDocs,
   deleteDoc, doc, updateDoc
 } from '@angular/fire/firestore';
-import { Book, NewBook } from './my-books.models';
-import { AuthService } from './../../shared/services/auth.service';
+import { Book } from '../models/book.model';
+import { AuthService } from './auth.service';
+import { BookSearchResult } from '../../pages/discover/discover.model'; // Import search result type
 
-@Injectable() // Provided at the MyBooks component level
-export class MyBooksService {
+/**
+ * A global service that acts as the single data layer for all
+ * Firestore interactions related to the user's book collection.
+ */
+@Injectable({ providedIn: 'root' })
+export class FirestoreService {
   private firestore: Firestore = inject(Firestore);
   private injector: Injector = inject(Injector);
   private authService: AuthService = inject(AuthService);
@@ -21,7 +26,6 @@ export class MyBooksService {
     return null;
   });
 
-  // --- Data Resource using resource() API ---
   private booksResource = resource({
     params: () => ({ collectionRef: this.booksCollection() }),
     loader: async ({ params }) => {
@@ -35,24 +39,28 @@ export class MyBooksService {
     },
   });
 
-  // --- Public State Signals ---
+  // --- Public Data Signals ---
   public books: Signal<Book[] | undefined> = this.booksResource.value;
   public isLoading: Signal<boolean> = this.booksResource.isLoading;
   public error: Signal<unknown | undefined> = this.booksResource.error;
 
-  // --- UI State Signals ---
-  public view = signal<'list' | 'edit' | 'detail'>('list');
-  public selectedBook = signal<Book | undefined>(undefined);
-  public layout = signal<'table' | 'grid'>('table');
-
   // --- CRUD Methods ---
-  // addBook is still needed by the Discover feature.
-  public async addBook(bookData: NewBook): Promise<any> {
+  public async addBook(bookData: BookSearchResult): Promise<any> {
     const collectionRef = this.booksCollection();
     if (!collectionRef) throw new Error('User not logged in');
-    const newBookWithTimestamp = { ...bookData, createdAt: new Date() };
-    const result = await addDoc(collectionRef, newBookWithTimestamp);
-    this.booksResource.reload(); // Reload data after adding
+
+    // Transform the search result into the Book object we want to save
+    const newBookForDb = {
+      googleBooksId: bookData.id, // Good practice to store the original ID
+      title: bookData.title,
+      author: bookData.author,
+      coverImageUrl: bookData.coverImageUrl,
+      status: 'to-read', // Default status
+      createdAt: new Date(),
+    };
+
+    const result = await addDoc(collectionRef, newBookForDb);
+    this.booksResource.reload();
     return result;
   }
 
@@ -61,7 +69,7 @@ export class MyBooksService {
     if (!collectionRef) throw new Error('User not logged in');
     const bookDoc = doc(collectionRef, bookId);
     await updateDoc(bookDoc, dataToUpdate);
-    this.booksResource.reload(); // Reload data after updating
+    this.booksResource.reload();
   }
 
   public async deleteBook(bookId: string): Promise<void> {
@@ -69,6 +77,6 @@ export class MyBooksService {
     if (!collectionRef) throw new Error('User not logged in');
     const bookDoc = doc(collectionRef, bookId);
     await deleteDoc(bookDoc);
-    this.booksResource.reload(); // Reload data after deleting
+    this.booksResource.reload();
   }
 }

@@ -2,11 +2,14 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessC
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
+import { provideAnimations } from '@angular/platform-browser/animations';
 
 // Import the necessary AngularFire modules
 import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { getFirestore, provideFirestore } from '@angular/fire/firestore';
 import { getAnalytics, provideAnalytics } from '@angular/fire/analytics';
+import { getAuth, provideAuth } from '@angular/fire/auth'; // 1. Import this
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyCL8Axl2BM4dCwLegUSRQ5yGlg3utnDxBY",
@@ -24,9 +27,12 @@ export const appConfig: ApplicationConfig = {
     provideZonelessChangeDetection(),
     provideRouter(routes), 
     provideClientHydration(withEventReplay()),
-    
+    provideAnimations(),
+
+    // Firebase configuration
     provideFirebaseApp(() => initializeApp(firebaseConfig)),
     provideFirestore(() => getFirestore()),
     provideAnalytics(() => getAnalytics()),
+    provideAuth(() => getAuth()),
   ]
 };

@@ -1,18 +1,19 @@
-// src/app/app.routes.ts
-
 import { Routes } from '@angular/router';
+import { authGuard } from './shared/guards/auth.guard';
 
 export const routes: Routes = [
-  // Standalone authentication routes (no shell)
   {
     path: 'login',
-    loadComponent: () => import('./auth/login/login').then((m) => m.Login),
+    loadComponent: () => import('./pages/account/login/login').then((m) => m.Login),
   },
-
-  // Main application routes that use the shell layout
+  {
+    path: 'register',
+    loadComponent: () => import('./pages/account/register/register').then((m) => m.Register),
+  },
   {
     path: '', 
     loadComponent: () => import('./shell/shell').then((m) => m.Shell),
+    canActivate: [authGuard],
     children: [
       {
         path: '',
@@ -22,6 +23,10 @@ export const routes: Routes = [
       {
         path: 'my-books',
         loadComponent: () => import('./pages/my-books/my-books').then((m) => m.MyBooks),
+      },
+      {
+        path: 'discover', // NEW: Added discover route
+        loadComponent: () => import('./pages/discover/discover').then((m) => m.Discover),
       },
       {
         path: 'settings',
