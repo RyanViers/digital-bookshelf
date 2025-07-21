@@ -2,19 +2,18 @@ import { inject, Injectable, resource, Signal, Injector, computed } from '@angul
 import { runInInjectionContext } from '@angular/core';
 import {
   Firestore, addDoc, collection, getDocs,
-  deleteDoc, doc, updateDoc
+  deleteDoc as deleteFirestoreDoc, doc, updateDoc, setDoc
 } from '@angular/fire/firestore';
+import { ref, uploadBytes, getDownloadURL, Storage, deleteObject } from '@angular/fire/storage';
+import { updateProfile } from '@angular/fire/auth';
 import { Book } from '../models/book.model';
 import { AuthService } from './auth.service';
-import { BookSearchResult } from '../../pages/discover/discover.model'; // Import search result type
+import { BookDetails } from '../../pages/discover/discover.model';
 
-/**
- * A global service that acts as the single data layer for all
- * Firestore interactions related to the user's book collection.
- */
 @Injectable({ providedIn: 'root' })
 export class FirestoreService {
   private firestore: Firestore = inject(Firestore);
+  private storage: Storage = inject(Storage);
   private injector: Injector = inject(Injector);
   private authService: AuthService = inject(AuthService);
 
@@ -39,23 +38,53 @@ export class FirestoreService {
     },
   });
 
-  // --- Public Data Signals ---
   public books: Signal<Book[] | undefined> = this.booksResource.value;
   public isLoading: Signal<boolean> = this.booksResource.isLoading;
   public error: Signal<unknown | undefined> = this.booksResource.error;
 
-  // --- CRUD Methods ---
-  public async addBook(bookData: BookSearchResult): Promise<any> {
+  // --- Profile Image Methods ---
+  public async uploadProfileImage(file: File): Promise<string> {
+    const user = this.authService.currentUser();
+    if (!user) throw new Error('User not logged in');
+
+    const storagePath = `profile-images/${user.uid}`;
+    const storageRef = ref(this.storage, storagePath);
+    const uploadResult = await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(uploadResult.ref);
+
+    await updateProfile(user, { photoURL: downloadURL });
+
+    const userDocRef = doc(this.firestore, `users/${user.uid}`);
+    await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
+    
+    return downloadURL;
+  }
+
+  public async deleteProfileImage(): Promise<void> {
+    const user = this.authService.currentUser();
+    if (!user) throw new Error('User not logged in');
+
+    const storagePath = `profile-images/${user.uid}`;
+    const storageRef = ref(this.storage, storagePath);
+    await deleteObject(storageRef);
+    await updateProfile(user, { photoURL: null });
+
+    const userDocRef = doc(this.firestore, `users/${user.uid}`);
+    await setDoc(userDocRef, { photoURL: null }, { merge: true });
+  }
+
+  // --- Book CRUD Methods ---
+  public async addBook(bookData: BookDetails): Promise<any> {
     const collectionRef = this.booksCollection();
     if (!collectionRef) throw new Error('User not logged in');
 
-    // Transform the search result into the Book object we want to save
     const newBookForDb = {
-      googleBooksId: bookData.id, // Good practice to store the original ID
+      googleBooksId: bookData.id,
       title: bookData.title,
       author: bookData.author,
       coverImageUrl: bookData.coverImageUrl,
-      status: 'to-read', // Default status
+      description: bookData.description,
+      status: 'to-read',
       createdAt: new Date(),
     };
 
@@ -76,7 +105,7 @@ export class FirestoreService {
     const collectionRef = this.booksCollection();
     if (!collectionRef) throw new Error('User not logged in');
     const bookDoc = doc(collectionRef, bookId);
-    await deleteDoc(bookDoc);
+    await deleteFirestoreDoc(bookDoc);
     this.booksResource.reload();
   }
 }

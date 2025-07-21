@@ -2,8 +2,7 @@ import { inject, Injectable, resource, signal, Signal, Injector } from '@angular
 import { runInInjectionContext } from '@angular/core';
 import { BookSearchResult, BookDetails } from './discover.model';
 import { FirestoreService } from '../../shared/services/firestore.service';
-import { environment } from '../../../environments/environment';  
-
+import { environment } from '../../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class DiscoverService {
   private injector: Injector = inject(Injector);
@@ -77,7 +76,7 @@ export class DiscoverService {
     });
   }
 
-  public async addBookToShelf(book: BookSearchResult): Promise<void> {
+  public async addBookToShelf(book: BookDetails): Promise<void> {
     await this.firestoreService.addBook(book);
   }
 }

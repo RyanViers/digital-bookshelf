@@ -1,19 +1,37 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, inject, signal, HostListener, ElementRef } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { AuthService } from './../../shared/services/auth.service';
+import { WebPage } from './../../shared/models/navigation.models';
 
 @Component({
   selector: 'app-header',
+  imports: [RouterLink],
   template: `
-    <header class="flex h-16 shrink-0 items-center justify-end bg-white px-6 shadow-sm">
+    <header class="flex h-16 shrink-0 items-center justify-end border-b border-slate-200 bg-white px-6">
       <div class="relative">
-        <button (click)="isDropdownOpen.set(!isDropdownOpen())" class="h-10 w-10 rounded-full bg-slate-200 transition-transform duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-          <span class="text-sm font-semibold text-slate-600">ME</span>
+        <!-- Avatar Button -->
+        <button (click)="isDropdownOpen.set(!isDropdownOpen())" class="flex items-center justify-center h-10 w-10 rounded-full bg-slate-200 transition-transform duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+          @if(authService.currentUser()?.photoURL; as photoURL) {
+            <img [src]="photoURL" alt="User avatar" class="h-full w-full rounded-full object-cover">
+          } @else {
+            <span class="text-sm font-semibold text-slate-600">{{ userInitials() }}</span>
+          }
         </button>
 
+        <!-- Dropdown Menu -->
         @if (isDropdownOpen()) {
-          <div class="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5">
-            <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Your Profile</a>
-            <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Settings</a>
-            <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Sign out</a>
+          <div class="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+            <a 
+              [routerLink]="settingsRoute" 
+              (click)="isDropdownOpen.set(false)"
+              class="block px-4 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-100">
+              Settings
+            </a>
+            <button 
+              (click)="logout()" 
+              class="w-full text-left block px-4 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-100">
+              Sign out
+            </button>
           </div>
         }
       </div>
@@ -21,5 +39,35 @@ import { Component, signal } from '@angular/core';
   `,
 })
 export class Header {
-  isDropdownOpen = signal(false);
+  protected authService = inject(AuthService);
+  private elementRef = inject(ElementRef);
+  
+  protected isDropdownOpen = signal(false);
+  protected settingsRoute = WebPage.SETTINGS;
+
+  // Close dropdown if user clicks outside of it
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.elementRef.nativeElement.contains(event.target)) {
+      this.isDropdownOpen.set(false);
+    }
+  }
+
+  protected userInitials = computed(() => {
+    const email = this.authService.currentUser()?.email;
+    if (!email) return '';
+    const namePart = email.split('@')[0];
+    const parts = namePart.split('.').filter(p => p.length > 0);
+    if (parts.length > 1) {
+      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+    } else if (namePart.length > 0) {
+      return namePart[0].toUpperCase();
+    }
+    return '';
+  });
+
+  protected logout(): void {
+    this.isDropdownOpen.set(false);
+    this.authService.logout();
+  }
 }
