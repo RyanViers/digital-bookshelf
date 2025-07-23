@@ -7,7 +7,7 @@ import { Header } from './components/header';
   selector: 'app-shell',
   imports: [RouterOutlet, SidebarNav, Header],
   template: `
-    <div class="flex h-screen bg-slate-100">
+    <div class="flex h-screen bg-slate-800">
       <!-- The sidebar now receives the collapsed state and emits an event to toggle it -->
       <app-sidebar-nav 
         [isCollapsed]="isSidebarCollapsed()" 
@@ -16,12 +16,12 @@ import { Header } from './components/header';
 
       <!-- The main content area now has a dynamic margin that reacts to the collapsed state -->
       <div 
-        class="flex flex-1 flex-col overflow-y-auto transition-[margin-left] duration-300 ease-in-out"
+        class="flex flex-1 flex-col overflow-y-auto transition-[margin-left] duration-300 ease-in-out bg-slate-700"
         [class.ml-64]="!isSidebarCollapsed()"
         [class.ml-20]="isSidebarCollapsed()">
         <app-header />
         
-        <main class="p-6 lg:p-8">
+        <main class="p-6 lg:p-8 flex-1">
           <router-outlet />
         </main>
       </div>

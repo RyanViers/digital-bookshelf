@@ -2,6 +2,7 @@
  * Defines the data structure for a single book.
  */
 export interface Book {
+  genre: string;
   id: string;
   title: string;
   author: string;

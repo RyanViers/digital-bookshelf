@@ -11,15 +11,8 @@ import { getAnalytics, provideAnalytics } from '@angular/fire/analytics';
 import { getAuth, provideAuth } from '@angular/fire/auth'; // 1. Import this
 import { getStorage, provideStorage } from '@angular/fire/storage';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCL8Axl2BM4dCwLegUSRQ5yGlg3utnDxBY",
-  authDomain: "digital-bookshelf-a3f32.firebaseapp.com",
-  projectId: "digital-bookshelf-a3f32",
-  storageBucket: "digital-bookshelf-a3f32.firebasestorage.app",
-  messagingSenderId: "490461556056",
-  appId: "1:490461556056:web:ddea6818b21f348f56492d",
-  measurementId: "G-RQFZQWLF43"
-};
+// Import the environment file
+import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -30,7 +23,7 @@ export const appConfig: ApplicationConfig = {
     provideAnimations(),
 
     // Firebase configuration
-    provideFirebaseApp(() => initializeApp(firebaseConfig)),
+     provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
     provideFirestore(() => getFirestore()),
     provideAnalytics(() => getAnalytics()),
     provideAuth(() => getAuth()),

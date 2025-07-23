@@ -29,6 +29,10 @@ export const routes: Routes = [
         // This single route handles both the master and detail views.
         loadComponent: () => import('./pages/discover/discover').then((m) => m.Discover),
       },
+      {
+        path: 'analytics',
+        loadComponent: () => import('./pages/analytics/analytics').then((m) => m.Analytics),
+      },
       // The discover/:id route is correctly removed.
       {
         path: 'settings',

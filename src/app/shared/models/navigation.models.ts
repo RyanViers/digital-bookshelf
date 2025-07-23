@@ -2,6 +2,7 @@ export enum WebPage {
   DASHBOARD = '', // Corrected from 'dashboards' to match the empty path route
   MY_BOOKS = 'my-books',
   DISCOVER = 'discover', // NEW: Added discover page
+  ANALYTICS = 'analytics', // NEW: Added analytics page
   SETTINGS = 'settings',
 }
 
@@ -9,7 +10,7 @@ export enum WebPage {
 export interface NavigationItem {
   path: WebPage;
   label: string;
-  icon: 'dashboard' | 'books' | 'discover' | 'settings'; // NEW: Added 'discover' icon type
+  icon: 'dashboard' | 'books' | 'discover' | 'analytics' | 'settings'; // NEW: Added 'analytics' icon type
 }
 
 // The actual data that will drive the navigation menu
@@ -28,6 +29,11 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     path: WebPage.DISCOVER, // NEW: Added Discover item
     label: 'Discover',
     icon: 'discover',
+  },
+  {
+    path: WebPage.ANALYTICS, // NEW: Added Analytics item
+    label: 'Analytics',
+    icon: 'analytics',
   },
   {
     path: WebPage.SETTINGS,

@@ -5,7 +5,6 @@ import { BookDetails } from '../discover.model';
 
 @Component({
   selector: 'app-detail',
-
   template: `
     @if (discoverService.isSelectedBookLoading()) {
       <p class="text-center text-slate-500 py-12">Loading book details...</p>

@@ -41,5 +41,8 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# Firebase
+/firestore-analytics-rules.txt
+
 # Environment files
 src/environments/environment.ts

@@ -65,10 +65,32 @@ export class DashboardService {
     return [{ name: 'Books Finished', series }];
   });
 
-  // Status Distribution (Pie Chart)
   public statusDistributionChartData = computed(() => [
     { name: 'To Read', value: this.toReadCount() },
     { name: 'Reading', value: this.currentlyReadingCount() },
     { name: 'Finished', value: this.booksFinishedCount() },
   ]);
+
+  // Genre Distribution (Pie Chart)
+  public genreDistributionChartData = computed(() => {
+    const genreCounts = new Map<string, number>();
+    this.books().forEach(book => {
+      // Assuming 'genre' is a property on your book object
+      const genre = book.genre || 'Uncategorized';
+      genreCounts.set(genre, (genreCounts.get(genre) || 0) + 1);
+    });
+    return Array.from(genreCounts.entries()).map(([name, value]) => ({ name, value }));
+  });
+
+  // Rating Distribution (Bar Chart)
+  public ratingDistributionChartData = computed(() => {
+    const ratingCounts = new Map<number, number>();
+    const finishedBooks = this.books().filter(b => b.status === 'finished' && b.rating);
+    for (const book of finishedBooks) {
+      const rating = Math.floor(book.rating || 0);
+      ratingCounts.set(rating, (ratingCounts.get(rating) || 0) + 1);
+    }
+    return Array.from(ratingCounts.entries()).map(([name, value]) => ({ name: `${name} Stars`, value }));
+  });
 }
+""
